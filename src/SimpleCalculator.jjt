@@ -1,0 +1,57 @@
+options {
+STATIC = false ;
+}
+
+
+/**
+* In terminal, call:
+* jjtree SimpleCalculator.jjt
+* javacc SimpleCalculator.jj
+* java SimpleCalculator
+* Enter input hereafter
+*/
+
+PARSER_BEGIN(SimpleCalculator)
+    public class SimpleCalculator {
+        public static void main( String[] args ) throws TokenMgrError, ParseException {
+            SimpleCalculator parser = new SimpleCalculator( new java.io.StringReader(args[0]) ) ;
+            SimpleNode root = parser.Program();
+            root.dump("");
+        }
+    }
+PARSER_END(SimpleCalculator)
+
+SKIP : { " " }
+TOKEN : { <EOL : "\n" | "\r" | "\r\n" >}
+TOKEN : { <#DIGITS : (["0"-"9"])+ >}
+TOKEN : { <PLUS : "+"> }
+TOKEN : { <NUMBER : <DIGITS> | <DIGITS> "." <DIGITS> | <DIGITS> "." | "." <DIGITS> >}
+TOKEN : { <MINUS : "-" >}
+TOKEN : { <DIVIDE : "/" >}
+TOKEN : { <TIMES : "*" >
+| <LPAR : "(">
+| <RPAR : ")">
+| <PREVIOUS : "$">
+}
+
+SimpleNode Program() #PROGRAM : { } {
+    (Expression() <EOL>)* (<EOL>)? {return jjtThis; }
+}
+
+void Term () #TERM : {} {
+    Primary() ( <TIMES> Primary() | <DIVIDE> Primary() )*
+}
+void Expression() #EXPRESSION : { Token t; } {
+    Term()  (<PLUS> Term() | <MINUS> Term() )*
+}
+void Primary() #PRIMARY : {
+    Token t;
+} {
+    t = <NUMBER> { jjtThis.value = t.image;}
+    |
+    t = <PREVIOUS> { jjtThis.value = t.image;}
+    |
+    <LPAR> Expression() <RPAR>
+    |
+    <MINUS> Primary()
+}
